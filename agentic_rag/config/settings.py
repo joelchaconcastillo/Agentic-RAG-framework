@@ -15,8 +15,8 @@ class RAGConfig(BaseSettings):
     
     # Google Gemini Configuration
     google_api_key: Optional[str] = Field(None, alias="GOOGLE_API_KEY")
-    gemini_llm_model: str = Field("gemini-pro", alias="GEMINI_LLM_MODEL")
-    gemini_embedding_model: str = Field("models/embedding-001", alias="GEMINI_EMBEDDING_MODEL")
+    gemini_llm_model: str = Field("gemini-2.0-flash-exp", alias="GEMINI_LLM_MODEL")
+    gemini_embedding_model: str = Field("text-embedding-004", alias="GEMINI_EMBEDDING_MODEL")
     
     # Default Provider
     default_provider: str = Field("openai", alias="DEFAULT_PROVIDER")

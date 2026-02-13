@@ -16,12 +16,12 @@ def main():
     # Initialize clients
     llm_client = GeminiLLMClient(
         api_key=os.getenv("GOOGLE_API_KEY"),
-        model="gemini-pro",
+        model="gemini-2.0-flash-exp",
     )
     
     embedding_client = GeminiEmbeddingClient(
         api_key=os.getenv("GOOGLE_API_KEY"),
-        model="models/embedding-001",
+        model="text-embedding-004",
     )
     
     # Create Q&A agent

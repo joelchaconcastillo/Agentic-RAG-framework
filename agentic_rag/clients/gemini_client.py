@@ -1,7 +1,8 @@
 """Gemini (Google) client implementations."""
 
 from typing import List, Optional
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from .base import BaseLLMClient, BaseEmbeddingClient
 
 
@@ -11,7 +12,7 @@ class GeminiLLMClient(BaseLLMClient):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-pro",
+        model: str = "gemini-2.0-flash-exp",
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
     ):
@@ -19,25 +20,14 @@ class GeminiLLMClient(BaseLLMClient):
         
         Args:
             api_key: Google API key
-            model: Model name (default: gemini-pro)
+            model: Model name (default: gemini-2.0-flash-exp)
             temperature: Sampling temperature (default: 0.7)
             max_tokens: Maximum tokens in response
         """
-        genai.configure(api_key=api_key)
-        self.model_name = model
+        self.client = genai.Client(api_key=api_key)
+        self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
-        
-        generation_config = {
-            "temperature": temperature,
-        }
-        if max_tokens:
-            generation_config["max_output_tokens"] = max_tokens
-            
-        self.model = genai.GenerativeModel(
-            model_name=model,
-            generation_config=generation_config,
-        )
 
     def generate(self, prompt: str, **kwargs) -> str:
         """Generate a completion using Gemini.
@@ -49,7 +39,17 @@ class GeminiLLMClient(BaseLLMClient):
         Returns:
             The generated text response
         """
-        response = self.model.generate_content(prompt)
+        config = types.GenerateContentConfig(
+            temperature=kwargs.get("temperature", self.temperature),
+        )
+        if self.max_tokens:
+            config.max_output_tokens = kwargs.get("max_tokens", self.max_tokens)
+            
+        response = self.client.models.generate_content(
+            model=self.model,
+            contents=prompt,
+            config=config,
+        )
         return response.text
 
     def generate_stream(self, prompt: str, **kwargs):
@@ -62,9 +62,17 @@ class GeminiLLMClient(BaseLLMClient):
         Yields:
             Chunks of the generated text response
         """
-        response = self.model.generate_content(prompt, stream=True)
-        
-        for chunk in response:
+        config = types.GenerateContentConfig(
+            temperature=kwargs.get("temperature", self.temperature),
+        )
+        if self.max_tokens:
+            config.max_output_tokens = kwargs.get("max_tokens", self.max_tokens)
+            
+        for chunk in self.client.models.generate_content_stream(
+            model=self.model,
+            contents=prompt,
+            config=config,
+        ):
             if chunk.text:
                 yield chunk.text
 
@@ -75,15 +83,15 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
     def __init__(
         self,
         api_key: str,
-        model: str = "models/embedding-001",
+        model: str = "text-embedding-004",
     ):
         """Initialize Gemini Embedding client.
         
         Args:
             api_key: Google API key
-            model: Embedding model name (default: models/embedding-001)
+            model: Embedding model name (default: text-embedding-004)
         """
-        genai.configure(api_key=api_key)
+        self.client = genai.Client(api_key=api_key)
         self.model = model
         self._dimension = None
 
@@ -96,13 +104,12 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
         Returns:
             A list of floats representing the embedding vector
         """
-        result = genai.embed_content(
+        result = self.client.models.embed_content(
             model=self.model,
-            content=text,
-            task_type="retrieval_document",
+            contents=text,
         )
         
-        return result['embedding']
+        return result.embeddings[0].values
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for multiple texts.
@@ -115,12 +122,11 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
         """
         embeddings = []
         for text in texts:
-            result = genai.embed_content(
+            result = self.client.models.embed_content(
                 model=self.model,
-                content=text,
-                task_type="retrieval_document",
+                contents=text,
             )
-            embeddings.append(result['embedding'])
+            embeddings.append(result.embeddings[0].values)
         
         return embeddings
 
@@ -136,3 +142,4 @@ class GeminiEmbeddingClient(BaseEmbeddingClient):
             self._dimension = len(dummy_embedding)
         
         return self._dimension
+
