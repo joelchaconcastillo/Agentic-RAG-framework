@@ -71,8 +71,8 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # Google Gemini Configuration
 GOOGLE_API_KEY=your-google-api-key-here
-GEMINI_LLM_MODEL=gemini-pro
-GEMINI_EMBEDDING_MODEL=models/embedding-001
+GEMINI_LLM_MODEL=gemini-2.0-flash-exp
+GEMINI_EMBEDDING_MODEL=text-embedding-004
 
 # Default Provider
 DEFAULT_PROVIDER=openai
